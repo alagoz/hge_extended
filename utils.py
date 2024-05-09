@@ -33,6 +33,33 @@ from sklearn.preprocessing import StandardScaler,MinMaxScaler
 # libraries to be installed
 import prince
 
+def select_classes(sel_class, y, x=None, reorder=True):
+    sel_inds = np.array([],dtype=int)
+    y_sel = y.copy()
+    for i,g in enumerate(sel_class):            
+        # find where indices for selected memberships occur
+        if (type(g) is list or type(g) is np.ndarray) and len(g)>1:
+            for j in g:
+                loc_ = np.where(y==j)[0].astype(int)                    
+                sel_inds = np.r_[sel_inds,loc_]
+                if reorder:
+                    y_sel[y==j]=i
+                else:
+                    y_sel[y==j]=g[0]
+        else:
+            loc_ = np.where(y==g)[0].astype(int)                
+            sel_inds = np.r_[sel_inds,loc_]           
+            if reorder:
+                y_sel[y==g]=i
+            else:
+                y_sel[y==g]=g
+    y_sel = y_sel[sel_inds]
+    if x is None:
+        return y_sel
+    else:        
+        x_sel = x[sel_inds,:].copy()         
+        return y_sel, x_sel
+        
 def class_labels_sanity_check(y_train,y_test):
     classes_train = np.unique(y_train)
     classes_test = np.unique(y_test)
