@@ -173,16 +173,14 @@ def truncate_and_drop(x,qntl=0.3):
             x_truncated = np.r_[x_truncated, np.array(x['dim_0'][i])[:cutx].reshape(1,-1)]
     return x_truncated
 
-def sort_class_id(y_train,y_test):
-    classes=np.unique(y_train)
+def sort_class_id(y):
+    classes=np.unique(y)
     Nclass = len(classes)
     # Standard order of class ids: 0,1,..,N-1
     if np.any(classes!=np.arange(Nclass)):
         for i in range(Nclass):
-            y_train[y_train==classes[i]]=i
-            y_test[y_test==classes[i]]=i
-        # classes=np.unique(y_train)
-    return y_train, y_test
+            y[y==classes[i]]=i       
+    return y
     
 def encode_super_labels(super_classes, y, x=None, reorder=True):
     sel_inds = np.array([],dtype=int)
