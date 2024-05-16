@@ -8,8 +8,10 @@ from utils import dim_reduction
 
 def get_cc(X,y):   
     classes = np.unique(y)
+    
     # class conditional means        
     cc=np.array([X[y == i].mean(axis=0) for i in classes])    
+    
     return cc
 
 def jensen_shannon_dist(x1,x2):
@@ -26,10 +28,10 @@ def get_jsd(X,y,verbose=False):
     data_by_class = [X[y==c] for c in classes]
     n_classes=len(classes)
     
-    # Get all combinations of 2-classes
+    # Get all combinations of class pairs
     dist_mat = np.zeros((n_classes,n_classes))
-    t0 = time()
     
+    t0 = time()    
     comb=combinations(range(n_classes),2)
     for i,j in comb:       
         x_i=data_by_class[i]
@@ -42,16 +44,20 @@ def get_jsd(X,y,verbose=False):
         
     dur_=time()-t0    
     if verbose: print(f'time for distance matrix generation {dur_:.2f} secs')
+    
     return dist_mat
 
 def preprocess_diss_mat(D,scale_=True):
     D[np.isnan(D)]=np.nanmax(D)
     m=D.shape[0]
+    
     inds_i=[i for i in range(m) for j in range(m) if i!=j]
     inds_j=[j for i in range(m) for j in range(m) if i!=j]
+    
     if len(D[inds_i,inds_j][D[inds_i,inds_j]==0])>0:
         D[inds_i,inds_j]=D[inds_i,inds_j]+(D[inds_i,inds_j][D[inds_i,inds_j]!=0]).min()
     if scale_: D = (D - np.min(D)) / (np.max(D) - np.min(D))
+    
     return D
 
 def decomp(M,ndim,methd='eig'):
@@ -81,8 +87,8 @@ def decomp(M,ndim,methd='eig'):
             
         X = dim_reduction(M,
                           ndim=ndim,
-                          n_neighbor=n_neighbor,      
-                          redu_meth=methd)    
+                          n_neighbor=n_neighbor,
+                          redu_meth=methd)
     return X,s
 
 def renorm(X):
@@ -94,7 +100,12 @@ def renorm(X):
         Y[i,:] = Y[i,:]/rr[i]
     return Y 
 
-def spectral_embedding(dist,dim,sigma=0.5,nrm='symm_div',dmeth='lle',renrm=True):
+def spectral_embedding(dist,
+                       dim,
+                       sigma=0.5,
+                       nrm_type='symm_div',
+                       dmeth='isomap',
+                       renrm=True):
     #Normalized spectral clustering from Ng (2002)
     n = dist.shape[0]
     
@@ -105,11 +116,11 @@ def spectral_embedding(dist,dim,sigma=0.5,nrm='symm_div',dmeth='lle',renrm=True)
     D = np.diag(A.sum(axis=1))
     
     #Normalization
-    if nrm=='symm_div': #Symmetric Divisive
+    if nrm_type=='symm_div': #Symmetric Divisive
         L = mp(D,-.5) @ A @ mp(D,-.5)
-    elif nrm=='div': #Divisive
+    elif nrm_type=='div': #Divisive
         L = mp(D,-1) @ A
-    elif nrm=='maxrow': #Maximum rowsum
+    elif nrm_type=='maxrow': #Maximum rowsum
         L = (A+D.max()*np.eye(n)-D)/D.max()
     
     X,Lambda = decomp(L,dim,methd=dmeth)
@@ -122,17 +133,17 @@ def get_diss(X,
              conf_mat   =None,
              y_pred     =None,
              diss_type  ='cem', 
-             out_type   ='diss_mat',             
-             dt_metric  ='euclidean',                         
-             redu_kwargs={'ndim':-1,                          
+             out_type   ='diss_mat',
+             dt_metric  ='euclidean',
+             redu_kwargs={'ndim':-1,
                           'model':'lda',},
              verbose    =False):
           
-    if diss_type in ['ccm','cem','cce']:
+    if diss_type == 'ccm':
         cc_ = get_cc(X,y,redu_kwargs=redu_kwargs)
         if out_type=='diss_mat':
             distf = DistanceMetric.get_metric(dt_metric)
-            mat_ = distf.pairwise(cc_)            
+            mat_ = distf.pairwise(cc_)
             return mat_
         else:
             return cc_
