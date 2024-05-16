@@ -20,7 +20,6 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import (TSNE,
                               LocallyLinearEmbedding as lle,
                               Isomap,)
-
 from sklearn.model_selection import StratifiedKFold, KFold
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.metrics import (accuracy_score,
@@ -31,24 +30,176 @@ from sklearn.metrics import (accuracy_score,
 from sklearn.neighbors import NeighborhoodComponentsAnalysis
 from sklearn.preprocessing import StandardScaler,MinMaxScaler
 # libraries to be installed
+from aeon.datasets import load_from_tsfile
 import prince
 
-def select_classes(sel_class, y, x=None, reorder=True):
+def prep_data(dset_name=None,
+              repo='uci',
+              return_class_labels=False,
+              orig_split=True,
+              return_xy=True,
+              sort_classes=True,
+              super_classes=None,
+              reorder=False,
+              stratify=True, 
+              k=5, 
+              kth=1,
+              rs=None,
+              shuffle_=False,
+              verbose=False):
+    
+    if repo == 'ucr':
+        path = 'data/'
+        data_path =f'{path}{dset_name}'
+        x_train, x_test, y_train, y_test, classes=loadTSdata(dset_name,
+                                                             data_path,
+                                                             reorder=reorder,)
+        dset = x_train, x_test, y_train, y_test
+        X = np.r_[x_train, x_test]
+        y = np.r_[y_train, y_test]
+        
+        if not orig_split:
+            x_train_new, x_test_new, y_train_new, y_test_new=split_data(X,
+                                                                        y,
+                                                                        stratify=stratify,
+                                                                        k=k,
+                                                                        kth=kth,
+                                                                        rs=rs,
+                                                                        shuffle_=shuffle_)
+            dset = x_train_new, x_test_new, y_train_new, y_test_new
+            X = np.r_[x_train_new, x_test_new]
+            y = np.r_[y_train_new, y_test_new]
+           
+    elif repo=='uci':
+        path = 'data/'
+        full_path =f'{path}{dset_name}.csv'
+        X, y = loadUCIdata(full_path) 
+               
+    if return_xy:
+        if sort_classes:
+            y = sort_class_id(y)
+        if super_classes is not None:
+            y, X = encode_super_labels(super_classes, y, X, reorder=reorder)            
+        out_ = X, y
+    else:
+        if 'dset' not in vars():
+            x_train_new, x_test_new, y_train_new, y_test_new=split_data(X,
+                                                                        y,
+                                                                        stratify=stratify,
+                                                                        k=k,
+                                                                        kth=kth,
+                                                                        rs=rs,
+                                                                        shuffle_=shuffle_)
+            dset = x_train, x_test, y_train, y_test
+        
+        x_train, x_test, y_train, y_test = dset
+        if sort_classes:
+            y_train = sort_class_id(y_train)
+            y_test = sort_class_id(y_test)
+        if super_classes is not None:
+            y_train, x_train = encode_super_labels(super_classes, y_train, x_train, reorder=reorder)
+            y_test, x_test = encode_super_labels(super_classes, y_test, x_test, reorder=reorder)
+        dset = x_train, x_test, y_train, y_test    
+        
+        out_ = dset
+    
+    if return_class_labels:
+        return out_, np.unique(y)
+    else:
+        return out_, []
+
+def loadTSdata(fname,
+               data_path,
+               truncation=False,
+               sqz=True):
+        
+    x_train, y_train = load_from_tsfile(os.path.join(data_path, f'{fname}/{fname}_TRAIN.ts'))
+    x_test, y_test = load_from_tsfile(os.path.join(data_path, f'{fname}/{fname}_TEST.ts'))
+                    
+    y_train = y_train.astype(int)
+    y_test = y_test.astype(int)
+    
+    # Check for varying length 
+    if type(x_train)==pd.core.frame.DataFrame:
+        # x_all = pd.concat(x_train,x_test)
+        len_list_train=[]
+        for i in range(len(x_train)):
+            len_list_train.append(len(x_train['dim_0'][i]))
+        len_list_test=[]
+        for i in range(len(x_test)):
+            len_list_test.append(len(x_test['dim_0'][i]))
+        train_fixed= np.all(np.array(len_list_train)==len_list_train[0])
+        test_fixed = np.all(np.array(len_list_test)==len_list_test[0])
+        if not (train_fixed and test_fixed):
+            warnings.warn('Data samples have varying length!')
+            if truncation:
+                x_train= truncate_and_drop(x_train) 
+                x_test = truncate_and_drop(x_test)
+                classes= np.unique(y_train)
+    
+    if sqz:
+        x_train= np.squeeze(x_train,axis=1)
+        x_test = np.squeeze(x_test,axis=1)
+        
+    classes = class_labels_sanity_check(y_train,y_test)
+    return x_train, x_test, y_train, y_test, classes
+
+def loadUCIdata(full_path,return_df=False):
+    df = pd.read_csv(full_path)
+    vals = df.values
+    X, y = vals[:, :-1], vals[:, -1]
+    y = LabelEncoder().fit_transform(y)
+        
+    if return_df:
+        return df, X, y
+    else:
+        return X, y
+
+def truncate_and_drop(x,qntl=0.3):
+    n_sample = len(x)
+    lens=[]
+    for i in range(n_sample):
+        lens.append(len(x['dim_0'][i]))
+    
+    cutx = int(np.quantile(lens,qntl))
+    
+    done = 0
+    for i in range(n_sample):
+        if done==0 and (len(x['dim_0'][i])>cutx):
+            x_truncated = np.array(x['dim_0'][i])[:cutx].reshape(1,-1)
+            done = 1
+            
+        elif done==1 and (len(x['dim_0'][i])>cutx):
+            x_truncated = np.r_[x_truncated, np.array(x['dim_0'][i])[:cutx].reshape(1,-1)]
+    return x_truncated
+
+def sort_class_id(y_train,y_test):
+    classes=np.unique(y_train)
+    Nclass = len(classes)
+    # Standard order of class ids: 0,1,..,N-1
+    if np.any(classes!=np.arange(Nclass)):
+        for i in range(Nclass):
+            y_train[y_train==classes[i]]=i
+            y_test[y_test==classes[i]]=i
+        # classes=np.unique(y_train)
+    return y_train, y_test
+    
+def encode_super_labels(super_classes, y, x=None, reorder=True):
     sel_inds = np.array([],dtype=int)
     y_sel = y.copy()
-    for i,g in enumerate(sel_class):            
+    for i,g in enumerate(super_classes):
         # find where indices for selected memberships occur
         if (type(g) is list or type(g) is np.ndarray) and len(g)>1:
             for j in g:
-                loc_ = np.where(y==j)[0].astype(int)                    
+                loc_ = np.where(y==j)[0].astype(int)
                 sel_inds = np.r_[sel_inds,loc_]
                 if reorder:
                     y_sel[y==j]=i
                 else:
                     y_sel[y==j]=g[0]
         else:
-            loc_ = np.where(y==g)[0].astype(int)                
-            sel_inds = np.r_[sel_inds,loc_]           
+            loc_ = np.where(y==g)[0].astype(int)
+            sel_inds = np.r_[sel_inds,loc_]
             if reorder:
                 y_sel[y==g]=i
             else:
@@ -57,7 +208,7 @@ def select_classes(sel_class, y, x=None, reorder=True):
     if x is None:
         return y_sel
     else:        
-        x_sel = x[sel_inds,:].copy()         
+        x_sel = x[sel_inds,:].copy()
         return y_sel, x_sel
         
 def class_labels_sanity_check(y_train,y_test):
@@ -108,7 +259,7 @@ def plotData(data,labels, close_all=True):
 def log_config(log_fname='log_file',log_=0):
     logd={0:print,1:logging.info}
     
-    # Log info        
+    # Log info
     log_file = '%s.log'%(log_fname) 
     targets = logging.StreamHandler(sys.stdout), logging.FileHandler(log_file)
     logging.basicConfig(format='%(message)s', level=logging.INFO, handlers=targets)
@@ -149,11 +300,11 @@ def parse_ndarray_from_csv(df,col_name,row_id,shape_=None,wrtype=None):
         else:
             wrtype='list'
     
-    if wrtype == 'ndarray':        
+    if wrtype == 'ndarray':
         for char in "[]\n":
-            obj=obj.replace(char,"")    
+            obj=obj.replace(char,"")
         
-        elems_=obj.split(sep=' ')    
+        elems_=obj.split(sep=' ')
         temp_list=[]
         for i in elems_:
             if i != '':
@@ -178,7 +329,7 @@ def generate_rand_dist(n_dim,type_='diss'):
         a = 2
         b = 0.5
     
-    for i in combinations(range(n_dim),2):        
+    for i in combinations(range(n_dim),2):
         rr=np.round(a*(np.random.rand()-b),2)
         d[i]=rr
         d[i[::-1]]=rr
@@ -455,21 +606,14 @@ def dim_reduction(data,**kwargs):
         if ndim==n_feat:
             if verbose==2: print('No need to reduce dimensionality.')
             return X
-        # sum_=0
-        # for i,c in enumerate(mdl.explained_variance_ratio_):
-        #     sum_ += c
-        #     if sum_>=0.95:
-        #         ndim = i+1
-        #         # print(ndim,'out of',X.shape[1],' components selected')
-        #         break
-               
+                       
     if 'model' in kwargs.keys():
         model = kwargs['model']
     else:
         model = 'pca'
     if model in ['lda','nca']:
         models = {'lda': LinearDiscriminantAnalysis(n_components=ndim),
-                     'nca': NeighborhoodComponentsAnalysis(n_components=ndim)}
+                  'nca': NeighborhoodComponentsAnalysis(n_components=ndim)}
         models[model].fit(X,y)
         Xr = models[model].transform(X)        
     elif model=='pca':
@@ -479,10 +623,8 @@ def dim_reduction(data,**kwargs):
         mca_ = prince.MCA(n_components=ndim)
         Xdf=pd.DataFrame(data=X)
         Xr = np.array(mca_.fit_transform(Xdf))        
-    else:
-        # print('dim reduction with',model)
+    else:        
         nn = min(n_sample-1, 4+int(n_sample/136))        
-        # print('nearest_neighbors:',nn)
         Xr = reduction_model(X, ndim=ndim, n_neighbor=nn, redu_meth=model)
         
     return Xr
