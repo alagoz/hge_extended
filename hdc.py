@@ -16,7 +16,6 @@ from time import time
 import warnings
 import copy
 
-
 n_clust=2
 rs = None
 _clust_dict ={
@@ -27,7 +26,6 @@ _clust_dict ={
     'dbscan': DBSCAN(eps=0.3),
     'gmm': GaussianMixture(n_components=n_clust, reg_covar=1e-6, random_state=rs),    
     }
-
 _dist_metric_dict={0:'euclidean',
                    1:'manhattan',
                    2:'chebyshev',
@@ -35,8 +33,6 @@ _dist_metric_dict={0:'euclidean',
                    4:'wminkowski',
                    5:'seuclidean',
                    6:'mahalanobis'}
-
-# distf = DistanceMetric.get_metric(_dist_metric_dict[0])
 
 class hdc():
     def __init__(self,
@@ -48,12 +44,6 @@ class hdc():
                  spec_meth ='isomap',
                  sigma     =0.85,
                  dist_meth ='complete',
-                 
-                 dset= None, # dataset (x_train,y_train,x_test,y_test)
-                 clf = None,
-                 clf_name ='svmLin',
-                 clf_eval ='f1',
-                 n_iter   = 50,
                  ):
         
         """Divisive hierarchical clustering makes top-down clustering"""
@@ -102,38 +92,22 @@ class hdc():
             if input_type in [None,'obs_vec']:
                 self.input_type='data_set'
             else:
-                raise ValueError(f'Although {input_type} specified as input, a dataset is provided.')                
-            
+                raise ValueError(f'Although {input_type} specified as input, a dataset is provided.')            
         else:
-            raise ValueError('Input provided does not look like a distance matrix, nor an observation vector, nor a dataset.')
-                    
-        if split_fun in ['loo','lsoo','pfts','potr','isr','srtr','isrts']:
-            if dset is None:
-                raise ValueError("A dataset has to be provied.")
-            else:                
-                self.dset = dset
-                self.clf=clf
-                self.clf_name = clf_name
-                self.n_object = len(np.unique(dset[2]))
-                self.dist_meth = 'clfd'
-                self.n_iter = n_iter
-                self.clf_eval = clf_eval
-                            
-        elif split_fun in ['diana','rank','prox']:            
-            self.dist_meth = dist_meth
-            
+            raise ValueError('Input provided does not look like a distance matrix, nor an observation vector, nor a dataset.')                    
+                        
         elif split_fun in [*_clust_dict.keys(),'fclust_hybrid']:
             self.clust_f = copy.deepcopy(_clust_dict[split_fun])
             if self.input_type=='diss_mat':
                 try:
-                    self.clust_f.set_params(metric='precomputed')                    
+                    self.clust_f.set_params(metric='precomputed')
                 except:
-                    raise ValueError('Attempting to change metric parameter of the cluster function to precomputed is failed.')           
+                    raise ValueError('Attempting to change metric parameter of the cluster function to precomputed is failed.')
             self.dt_metric = dt_metric
             self.dist_meth = dist_meth
         else:
             raise ValueError(f'split_fun={split_fun} is not recognized.')
-                            
+                     
         self.split_fun = split_fun
         self.n_clusters = self.n_object-1 # number of non-leaf clusters to be formed
         self.Z = np.zeros((self.n_object-1,4))
@@ -142,7 +116,7 @@ class hdc():
         self.id_clust = self.n_object-1  # count down from all parent (non-singleton) clusters
         self.clusters={self.id_node: list(range(self.n_object))} # non-singleton clusters
         self.is_fitted = False
-           
+        
     def preprocess_diss_mat(self,D,scale_=True):
         m=D.shape[0]
         inds_i=[i for i in range(m) for j in range(m) if i!=j]
@@ -383,7 +357,7 @@ class hdc():
             
         else:
             raise ValueError("Not a valid distance method provided.")
-        return d       
+        return d    
     
 #%%        
 if __name__=='__main__':
