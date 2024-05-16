@@ -78,25 +78,8 @@ class hdc():
                 self.dt_metric = dt_metric
             else:
                 raise ValueError(f'Although {input_type} specified as input, an observation vector is provided.')
-            
-        elif type(y) is tuple and len(y)==4:
-            self.data = y
-            self.clf=clf
-            self.clf_name = clf_name
-            self.n_object = len(np.unique(dset[2]))
-            self.n_sample, self.n_feat = dset[0].shape
-            self.dist_meth = 'clfd'
-            self.n_iter = n_iter
-            self.clf_eval = clf_eval
-            
-            if input_type in [None,'obs_vec']:
-                self.input_type='data_set'
-            else:
-                raise ValueError(f'Although {input_type} specified as input, a dataset is provided.')            
-        else:
-            raise ValueError('Input provided does not look like a distance matrix, nor an observation vector, nor a dataset.')                    
-                        
-        elif split_fun in [*_clust_dict.keys(),'fclust_hybrid']:
+                           
+        if split_fun in [*_clust_dict.keys(),'fclust_hybrid']:
             self.clust_f = copy.deepcopy(_clust_dict[split_fun])
             if self.input_type=='diss_mat':
                 try:
