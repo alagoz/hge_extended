@@ -57,7 +57,8 @@ for r_ in range(k_run):
     x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=te_size, random_state=r_, stratify=y)
     
     # building hieararchy in binary tree form
-    tree, Z = build_tree(diss_,y_train,y_test,**tree_kwargs)
+    tree_kwargs['y_test']=y_test
+    tree, Z = build_tree(diss_, y_train, **tree_kwargs)
       
     if plot_tree:
         if r_==0:
