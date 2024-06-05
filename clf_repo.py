@@ -1,3 +1,7 @@
+"""
+Repository to call classifier algorithms
+"""
+
 # built-in libraries
 import numpy as np
 import os
@@ -10,7 +14,6 @@ from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
 # libraries to be installed
 from xgboost import XGBClassifier # pip install xgboost
-
 
 #Parameters
 rs=0

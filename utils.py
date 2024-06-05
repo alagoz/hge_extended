@@ -80,7 +80,7 @@ def prep_data(dset_name=None,
         if sort_classes:
             y = sort_class_id(y)
         if super_classes is not None:
-            y, X = encode_super_labels(super_classes, y, X, reorder=reorder)            
+            y, X = encode_super_labels(super_classes, y, X, reorder=reorder)
         out_ = X, y
     else:
         if 'dset' not in vars():
@@ -240,7 +240,7 @@ def split_data(x_all,
         i += 1
         if i==kth:
             break
-    # X_train, X_test, y_train, y_test = train_test_split(x_all, y_all, test_size=1/k, random_state=rseed, stratify=y_all)    
+    # X_train, X_test, y_train, y_test = train_test_split(x_all, y_all, test_size=1/k, random_state=rseed, stratify=y_all)
     return x_train, x_test, y_train, y_test
 
 def quantize(x,qlevel=2**8):
@@ -353,7 +353,7 @@ def C_n(n):
     return sum_
 
 def T_n(n):
-    "Estimate total number of trees given number of classes"    
+    "Estimate total number of trees given number of classes"
     if n==2:        
         return 1
     elif n==3:
@@ -384,7 +384,7 @@ def T_n_look(n):
             sum_=0           
             for k in range(1,round(n_i/2)+1):
                 if n_i%2==0 and k==n_i/2:
-                    sum_ += int(nCk(n_i,n_i-k)/2)*table_[n_i-k]                    
+                    sum_ += int(nCk(n_i,n_i-k)/2)*table_[n_i-k]
                 else:
                     sum_ += nCk(n_i,n_i-k)*table_[n_i-k]
             table_.append(sum_)
@@ -483,7 +483,7 @@ def get_significance(scores_hc,scores_fc,les_=None):
 def get_score(y_true, y_pred=None, pred_proba=None, eval_metric='f1'):
     if eval_metric=='acc':
         score_ = accuracy_score(y_true, y_pred)
-    elif eval_metric=='bac':        
+    elif eval_metric=='bac':
         score_ = balanced_accuracy_score(y_true, y_pred)
     elif eval_metric=='f1':
         score_ = f1_score(y_true, y_pred, average='macro')

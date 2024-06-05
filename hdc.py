@@ -1,3 +1,13 @@
+"""
+Module to implement Hierarchical Divisive Clustering (HDC) task
+hdc: a class including attributes and methods to specify HDC model.
+Model can handle different splitting strategies during HDC. 
+
+fit() method implements HDC and returns: 
+- nodes for a binary tree
+- linkage matrix
+"""
+
 import numpy as np
 from sklearn.metrics import DistanceMetric
 from set_dissimilarity import spectral_embedding

@@ -1,3 +1,18 @@
+"""
+Module including methods and approaches to define relationship between
+classes and represent it in either:
+- dissimilarity matrix
+- observation vector 
+form
+
+ccm: using class centroids to represent classes. The centroids are
+obtained via class conditional means.
+jsd: Jensen-Shannon distance (JSD) between instances associated with
+different classes.
+
+spectral_embedding() implements matrix embedding into n-dimensional
+vector space.
+"""
 import numpy as np
 from time import time
 from sklearn.metrics import DistanceMetric

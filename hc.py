@@ -1,3 +1,13 @@
+"""
+Classes for implementation of Hierarchical Classification task.
+
+hier_binary_tree: A class where 
+- hierarchy is defined in binary tree structure
+- HC is implemented using GC and LCPN, LCPN+, and LCPN+F schemes
+
+hier_node: a class where nodes of binary tree are defined
+"""
+
 import numpy as np
 import os
 import warnings
