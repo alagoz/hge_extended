@@ -814,7 +814,7 @@ class hier_binary_tree:
     def estimate_proba_chain(self,pred_proba_all, hc_type='lcpn+', weights='none', proportion='inverse', chain_type='average'):
                     
         if self.branches_for_leaves is None: 
-            self.find_path_for_leaves(hc_type=hc_type)
+            self.find_path_for_leaves()
         path_branch=self.branches_for_leaves
         
         if weights=='none':

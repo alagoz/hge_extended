@@ -29,6 +29,7 @@ from sklearn.metrics import (accuracy_score,
                              log_loss,)
 from sklearn.neighbors import NeighborhoodComponentsAnalysis
 from sklearn.preprocessing import StandardScaler,MinMaxScaler
+
 # libraries to be installed
 from aeon.datasets import load_from_tsfile
 import prince
@@ -437,7 +438,7 @@ def plot_settings(use_sns=False):
         sns_c = sns.color_palette(palette='deep')
         sns.set(rc={'figure.figsize':(7.4,4.2)})
 
-def plot_dendogram(Z, close_all=0, orient="top", leafFont=9, title_=False, class_list=None):
+def plot_dendrogram(Z, close_all=0, orient="top", leafFont=9, title_=False, class_list=None):
     if close_all:plt.close('all')
     if title_: title_text= "Hierarchical Clustering Dendrogram"
     if class_list is not None:
@@ -552,29 +553,29 @@ ndim= 0: set using PCA
 ndim=-1: set using LDA
 ndim=-2: set using MCA
 """
-def dim_reduction(data,**kwargs):
+def dim_reduction(data,**kwd):
     if type(data) is tuple and len(data)==2:
         X, y = data        
     else:
         X = data
     n_sample, n_feat = X.shape
     
-    if 'verbose' in kwargs.keys():
-        verbose = kwargs['verbose']
+    if 'verbose' in kwd.keys():
+        verbose = kwd['verbose']
     else:
         verbose = 0
         
     # Scaling Option
-    if 'scale_' in kwargs.keys():
-        if kwargs['scale_']=='min_max':
+    if 'scale_' in kwd.keys():
+        if kwd['scale_']=='min_max':
             scaler = MinMaxScaler()
             X = scaler.fit_transform(X)
-        elif kwargs['scale_']=='std':
+        elif kwd['scale_']=='std':
             scaler = StandardScaler()
             X = scaler.fit_transform(X)
     
-    if 'ndim' in kwargs.keys():
-        ndim = kwargs['ndim']
+    if 'ndim' in kwd.keys():
+        ndim = kwd['ndim']
     else:
         ndim = 0
     if ndim in [0,-1,-2]:        
@@ -595,8 +596,8 @@ def dim_reduction(data,**kwargs):
             cum_sum_=np.cumsum(sum_)
         if verbose: print(f'Cumulative percentage of variance:{cum_sum_}')
         # automatically choose ndim
-        if 'cum_var_thresh' in kwargs.keys(): 
-            var_thresh=kwargs['cum_var_thresh']
+        if 'cum_var_thresh' in kwd.keys(): 
+            var_thresh=kwd['cum_var_thresh']
         else:
             var_thresh=95
         ndim=len(cum_sum_[cum_sum_<var_thresh])
@@ -605,8 +606,8 @@ def dim_reduction(data,**kwargs):
             if verbose==2: print('No need to reduce dimensionality.')
             return X
                        
-    if 'model' in kwargs.keys():
-        model = kwargs['model']
+    if 'model' in kwd.keys():
+        model = kwd['model']
     else:
         model = 'pca'
     if model in ['lda','nca']:
@@ -626,3 +627,6 @@ def dim_reduction(data,**kwargs):
         Xr = reduction_model(X, ndim=ndim, n_neighbor=nn, redu_meth=model)
         
     return Xr
+
+
+    

@@ -6,11 +6,14 @@ from scipy.spatial import distance
 from itertools import combinations
 from utils import dim_reduction
 
-def get_cc(X,y):   
+def get_cc(X,y,
+           redu_kwargs={'ndim':-1,
+           'model':'lda'}):
+    X = dim_reduction((X,y),**redu_kwargs)
     classes = np.unique(y)
     
-    # class conditional means        
-    cc=np.array([X[y == i].mean(axis=0) for i in classes])    
+    # class conditional means
+    cc=np.array([X[y == i].mean(axis=0) for i in classes])
     
     return cc
 
@@ -106,16 +109,16 @@ def spectral_embedding(dist,
                        nrm_type='symm_div',
                        dmeth='isomap',
                        renrm=True):
-    #Normalized spectral clustering from Ng (2002)
+    # Normalized spectral clustering from Ng (2002)
     n = dist.shape[0]
     
-    #Affinity matrix A with free scale parameter sigma
+    # Affinity matrix A with free scale parameter sigma
     A = np.exp(-dist/(2*sigma**2))
     
-    #Diagonal matrix D by lumping A    
+    # Diagonal matrix D by lumping A    
     D = np.diag(A.sum(axis=1))
     
-    #Normalization
+    # Normalization
     if nrm_type=='symm_div': #Symmetric Divisive
         L = mp(D,-.5) @ A @ mp(D,-.5)
     elif nrm_type=='div': #Divisive
@@ -129,10 +132,7 @@ def spectral_embedding(dist,
 
 def get_diss(X,
              y,
-             pred_proba =None,
-             conf_mat   =None,
-             y_pred     =None,
-             diss_type  ='cem', 
+             diss_type  ='ccm', 
              out_type   ='diss_mat',
              dt_metric  ='euclidean',
              redu_kwargs={'ndim':-1,

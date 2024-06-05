@@ -1,18 +1,13 @@
 import numpy as np
-from sklearn.metrics import (DistanceMetric,
-                             accuracy_score,
-                             f1_score)
-from diss_mat_embedding import spectral_embedding
+from sklearn.metrics import DistanceMetric
+from set_dissimilarity import spectral_embedding
 from sklearn.cluster import (MeanShift,
                              AffinityPropagation,
                              KMeans,
                              DBSCAN,)
 from sklearn_extra.cluster import KMedoids
 from sklearn.mixture import GaussianMixture
-from utils import select_classes
-from clf_repo import clf_dict
-from hier_struct import hier_node
-from time import time
+from hc import hier_node
 import warnings
 import copy
 
@@ -341,38 +336,3 @@ class hdc():
         else:
             raise ValueError("Not a valid distance method provided.")
         return d    
-    
-#%%        
-if __name__=='__main__':
-    from utils import prep_data, plot_dendogram
-        
-    dset_name='Glass'
-    repo='uci'
-    (X,y),labels = prep_data(dset_name=dset_name,
-                             repo=repo,
-                             return_class_labels=True,
-                             orig_split=True,
-                             return_xy=True,
-                             sort_classes=True,
-                             super_classes=None,
-                             reorder=False,
-                             stratify=True, 
-                             k=5, 
-                             kth=1,
-                             rs=None,
-                             shuffle_=False,
-                             verbose=False)
-    classes = np.unique(y)
-    n_classes = len(classes)
-    
-    from diss_ import get_diss
-    clf=copy.deepcopy(clf_dict[clf_name])
-    D = get_diss(X,y,diss_type='cc',clf=clf)
-    
-    model = hdc(y=D,
-                split_fun = 'diana',
-                use_diss_mat = True,
-                clust_fun = clust_fun)
-    
-    Z, nodes = model.fit()
-    plot_dendogram(Z, class_list=df_y)   
